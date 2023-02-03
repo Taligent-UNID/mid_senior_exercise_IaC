@@ -27,4 +27,4 @@ Se requiere construir una arquitectura que satisfaga el siguiente diagrama
 - Los datos transformados deben poder ser accesibles en formato tabla
 
 ## Notas
-El template entregado debe ser en un formato valido de Cloud Formation
+El template entregado debe ser en un formato valido de Cloud Formation (JSON o YAML)
