@@ -14,7 +14,7 @@ Se disponibilizo un usuario IAM con acceso a los siguientes servicios en la plat
 
 Se requiere construir una arquitectura que satisfaga el siguiente diagrama
 
-<img src="images/arquitectura.png" width="750" height="500"/>
+<img src="images/arquitectura.png" width="750" height="400"/>
 
 ### **LIMPIAR DIAGRAMA**
 
