@@ -16,8 +16,6 @@ Se requiere construir una arquitectura que satisfaga el siguiente diagrama
 
 <img src="images/arquitectura.png" width="750" height="600"/>
 
-### **LIMPIAR DIAGRAMA**
-
 - Se disponibilizo un set de datos no catalogados en esta carpeta de S3: *TODO ESCRIBIR PATH*
 - Dichos datos deben ser migrados en la siguiente carpeta de S3: *TODO ESCRIBIR PATH*
 - Los datos destino deben ser catalogados
