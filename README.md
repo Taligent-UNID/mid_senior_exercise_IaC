@@ -1,4 +1,4 @@
-![Logo](./images/taligent.png)
+![Logo](./images/taligent.jpg)
 
 # Ejercicio IAC - SSR Level
 
