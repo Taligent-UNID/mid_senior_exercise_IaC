@@ -30,6 +30,7 @@ Excepto el bucket con la data inicial, todo lo necesario para completar el ejerc
 La instancia de DMS que se va a utilizar es la t3.micro que ya va a disponibilizada en la cuenta de AWS pero en el entregable igualmente debe estar incluido toda la configuracion en el codigo para levantar la instancia desde cero
 
 Etiquetar todos los recursos como:
+
 Key; Interno  
 Value: Ejercicio-IaC
 
