@@ -22,6 +22,10 @@ Se requiere construir una arquitectura que satisfaga el siguiente diagrama
 - Considerar la lógica de negocio y los datos de la bajada para mostrar información significativa. Pueden generar nuevas vistas de Athena de ser necesario (por lo general estos indicadores se desarrollan en la misma herramienta de BI pero vamos a focalizarnos en AWS y uso de SQL)
 - Los datos transformados deben poder ser accesibles en formato tabla
 
+
+<br>
+
+
 ## Notas
 El template entregado debe ser en un formato valido de Cloud Formation (JSON o YAML)
 
