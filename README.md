@@ -28,3 +28,7 @@ El template entregado debe ser en un formato valido de Cloud Formation (JSON o Y
 Excepto el bucket con la data inicial, todo lo necesario para completar el ejercicio debe ser creado en el template de CloudFormation
 
 Se van a entregar credenciales para acceder por AWS CLI y se va a usar un metodo de encriptado para la entrega segura de esas credenciales. Todo lo necesario para desencriptar va a estar en el siguiente repositorio: https://github.com/TaligentAWS/python_crypto
+
+La instancia de DMS que se utiliza es la T3.micro
+
+Etiquetar todos los recursos como Interno - Ejercicio-IaC
