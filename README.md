@@ -40,7 +40,7 @@ Instancia DMS: ejercicio-iac
 
 Etiquetar todos los recursos como:
 
-Key; Interno  
+Key: Interno  
 Value: Ejercicio-IaC
 
 <br>
