@@ -1,0 +1,574 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+    #BUCKET PARA DIRIGIR MIGRACION DE DMS
+    S3Bucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "challenge-aws-iac-target-dms-jigomez"
+            Tags: 
+              - 
+                Key: "Interno"
+                Value: "Ejercicio-IaC"
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+
+    #BUCKET PARA INGRESAR PROCESOS DE GLUE
+    S3Bucket2:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "challenge-aws-iac-glueprocess-jigomez"
+            Tags: 
+              - 
+                Key: "Interno"
+                Value: "Ejercicio-IaC"            
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+    
+    #BUCKET PARA MIGRACION DE GLUE Y EXTRACCION DE ATHENA
+    S3Bucket3:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "challenge-aws-iac-target-glue-jigomez"
+            Tags: 
+              - 
+                Key: "Interno"
+                Value: "Ejercicio-IaC"
+            BucketEncryption: 
+                ServerSideEncryptionConfiguration: 
+                  - 
+                    ServerSideEncryptionByDefault: 
+                        SSEAlgorithm: "AES256"
+                    BucketKeyEnabled: true
+
+    #ROLE PARA SERVICIO GLUE
+    IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: "Glue-Role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"glue.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/AdministratorAccess"
+
+    #ROLE PARA SERVICIO DMS
+    IAMRole2:
+        Type: "AWS::IAM::Role"
+        Properties:
+            Path: "/"
+            RoleName: "Dms-Role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"dms.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+            MaxSessionDuration: 3600
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole"
+              - "arn:aws:iam::aws:policy/service-role/AmazonDMSCloudWatchLogsRole"
+              - "arn:aws:iam::aws:policy/service-role/AWSMigrationHubDMSAccess"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+
+    #CREO ENDPOINT ORIGEN - DMS
+    DMSEndpoint:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: "challenge-aws-iac-origen"
+            EndpointType: "SOURCE"
+            EngineName: "s3"
+            ExtraConnectionAttributes: "bucketName=challenge-aws-iac;cdcPath=undefined;csvDelimiter=,;csvRowDelimiter=\\n;datePartitionDelimiter=SLASH;datePartitionEnabled=true;datePartitionSequence=DDMMYYYY;"
+            SslMode: "none"
+            S3Settings: 
+                BucketName: "challenge-aws-iac"
+                CsvDelimiter: ";"
+                CsvRowDelimiter: "\\n"
+                ExternalTableDefinition: |
+                    {
+                        "TableCount": "2",
+                        "Tables": [
+                            {
+                                "TableName": "Clientes",
+                                "TablePath": "Clientes/",
+                                "TableOwner": "ta",
+                                "TableColumns": [
+                                    {
+                                        "ColumnName": "Id",
+                                        "ColumnType": "INT8",
+                                        "ColumnNullable": "false",
+                                        "ColumnIsPk": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Cliente",
+                                        "ColumnType": "WSTRING",
+                                        "ColumnLength": "70"
+                                    },
+                                    {
+                                        "ColumnName": "Tipo",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "15"
+                                    },
+                                    {
+                                        "ColumnName": "Telefono",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "15"
+                                    },
+                                    {
+                                        "ColumnName": "Ubicacion",
+                                        "ColumnType": "WSTRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "Blank1",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank2",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank3",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank4",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank5",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank16",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    }
+                                ],
+                                "TableColumnsTotal": "11"
+                            },
+                            {
+                                "TableName": "Ventas",
+                                "TablePath": "Ventas/",
+                                "TableOwner": "ta",
+                                "TableColumns": [
+                                    {
+                                        "ColumnName": "Blank1",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "NumeroFactura",
+                                        "ColumnType": "INT8",
+                                        "ColumnNullable": "false",
+                                        "ColumnIsPk": "true"
+                                    },
+                                    {
+                                        "ColumnName": "FechaFactura",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "Cliente",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "MontoSinImp",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "10"
+                                    },
+                                    {
+                                        "ColumnName": "Impuestos",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "10"
+                                    },
+                                    {
+                                        "ColumnName": "MontoFactura",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "12"
+                                    },
+                                    {
+                                        "ColumnName": "Blank2",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Blank3",
+                                        "ColumnType": "BOOLEAN",
+                                        "ColumnNullable": "true"
+                                    }
+                                ],
+                                "TableColumnsTotal": "9"
+                            }
+                        ]
+                    }
+
+    #CREO ENDPOINT TARGET - DMS
+    DMSEndpoint2:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: "challenge-aws-iac-target-dms-jigomez"
+            EndpointType: "TARGET"
+            EngineName: "s3"
+            ExtraConnectionAttributes: "bucketName=challenge-aws-iac-target-dms-jigomez;compressionType=NONE;csvDelimiter=,;csvRowDelimiter=\\n;datePartitionEnabled=false;"
+            SslMode: "none"
+            S3Settings: 
+                BucketName: "challenge-aws-iac-target-dms-jigomez"
+                CompressionType: "NONE"
+                CsvDelimiter: ";"
+                CsvRowDelimiter: "\\n"
+
+    #CREO TASK REPLICATION
+    #DIFICULTAD, ARN DE INSTANCIA + BUCKET ORIGEN Y TARGET
+    DMSReplicationTask:
+        Type: "AWS::DMS::ReplicationTask"
+        Properties:
+            ReplicationTaskIdentifier: "tali-migration"
+            SourceEndpointArn: !Sub "arn:aws:dms:${AWS::us-east-1}:506393252966:endpoint:NKP2VZDAPLQZIJL5JIBY37PSAKSJGPF2OMXK6EA"
+            TargetEndpointArn: !Sub "arn:aws:dms:${AWS::us-east-1}:506393252966:endpoint:I2YA67UB6CLTHU3AGVCAZYLZ6NMM5FZM7Y6QZQQ"
+            ReplicationInstanceArn: !Sub "arn:aws:dms:${AWS::us-east-1}:506393252966:rep:TNFLWC5WY6N2BC3V4HQF5SUTN4AHXC7TFA5RADI"
+            MigrationType: "full-load"
+            TableMappings: "{\"rules\":[{\"rule-type\":\"selection\",\"rule-id\":\"327599484\",\"rule-name\":\"327599484\",\"object-locator\":{\"schema-name\":\"%\",\"table-name\":\"%\"},\"rule-action\":\"include\",\"filters\":[]}]}"
+            ReplicationTaskSettings: "{\"TargetMetadata\":{\"TargetSchema\":\"\",\"SupportLobs\":true,\"FullLobMode\":false,\"LobChunkSize\":0,\"LimitedSizeLobMode\":true,\"LobMaxSize\":32,\"InlineLobMaxSize\":0,\"LoadMaxFileSize\":0,\"ParallelLoadThreads\":0,\"ParallelLoadBufferSize\":0,\"BatchApplyEnabled\":false,\"TaskRecoveryTableEnabled\":false,\"ParallelLoadQueuesPerThread\":0,\"ParallelApplyThreads\":0,\"ParallelApplyBufferSize\":0,\"ParallelApplyQueuesPerThread\":0},\"FullLoadSettings\":{\"TargetTablePrepMode\":\"DO_NOTHING\",\"CreatePkAfterFullLoad\":false,\"StopTaskCachedChangesApplied\":false,\"StopTaskCachedChangesNotApplied\":false,\"MaxFullLoadSubTasks\":8,\"TransactionConsistencyTimeout\":600,\"CommitRate\":10000},\"Logging\":{\"EnableLogging\":true,\"EnableLogContext\":false,\"LogComponents\":[{\"Id\":\"TRANSFORMATION\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"SOURCE_UNLOAD\",\"Severity\":\"LOGGER_SEVERITY_DETAILED_DEBUG\"},{\"Id\":\"IO\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"TARGET_LOAD\",\"Severity\":\"LOGGER_SEVERITY_DETAILED_DEBUG\"},{\"Id\":\"PERFORMANCE\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"SOURCE_CAPTURE\",\"Severity\":\"LOGGER_SEVERITY_DETAILED_DEBUG\"},{\"Id\":\"SORTER\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"REST_SERVER\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"VALIDATOR_EXT\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"TARGET_APPLY\",\"Severity\":\"LOGGER_SEVERITY_DETAILED_DEBUG\"},{\"Id\":\"TASK_MANAGER\",\"Severity\":\"LOGGER_SEVERITY_DETAILED_DEBUG\"},{\"Id\":\"TABLES_MANAGER\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"METADATA_MANAGER\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"FILE_FACTORY\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"COMMON\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"ADDONS\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"DATA_STRUCTURE\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"COMMUNICATION\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"},{\"Id\":\"FILE_TRANSFER\",\"Severity\":\"LOGGER_SEVERITY_DEFAULT\"}],\"CloudWatchLogGroup\":\"dms-tasks-dms-instance\",\"CloudWatchLogStream\":\"dms-task-RAUL7M2Z5KHQD3LZ6VOGOU2PFY35SMVUJ5FJYTY\"},\"ControlTablesSettings\":{\"historyTimeslotInMinutes\":5,\"ControlSchema\":\"\",\"HistoryTimeslotInMinutes\":5,\"HistoryTableEnabled\":false,\"SuspendedTablesTableEnabled\":false,\"StatusTableEnabled\":false,\"FullLoadExceptionTableEnabled\":false},\"StreamBufferSettings\":{\"StreamBufferCount\":3,\"StreamBufferSizeInMB\":8,\"CtrlStreamBufferSizeInMB\":5},\"ChangeProcessingDdlHandlingPolicy\":{\"HandleSourceTableDropped\":true,\"HandleSourceTableTruncated\":true,\"HandleSourceTableAltered\":true},\"ErrorBehavior\":{\"DataErrorPolicy\":\"LOG_ERROR\",\"EventErrorPolicy\":\"IGNORE\",\"DataTruncationErrorPolicy\":\"LOG_ERROR\",\"DataErrorEscalationPolicy\":\"SUSPEND_TABLE\",\"DataErrorEscalationCount\":0,\"TableErrorPolicy\":\"SUSPEND_TABLE\",\"TableErrorEscalationPolicy\":\"STOP_TASK\",\"TableErrorEscalationCount\":0,\"RecoverableErrorCount\":-1,\"RecoverableErrorInterval\":5,\"RecoverableErrorThrottling\":true,\"RecoverableErrorThrottlingMax\":1800,\"RecoverableErrorStopRetryAfterThrottlingMax\":true,\"ApplyErrorDeletePolicy\":\"IGNORE_RECORD\",\"ApplyErrorInsertPolicy\":\"LOG_ERROR\",\"ApplyErrorUpdatePolicy\":\"LOG_ERROR\",\"ApplyErrorEscalationPolicy\":\"LOG_ERROR\",\"ApplyErrorEscalationCount\":0,\"ApplyErrorFailOnTruncationDdl\":false,\"FullLoadIgnoreConflicts\":true,\"FailOnTransactionConsistencyBreached\":false,\"FailOnNoTablesCaptured\":true},\"ChangeProcessingTuning\":{\"BatchApplyPreserveTransaction\":true,\"BatchApplyTimeoutMin\":1,\"BatchApplyTimeoutMax\":30,\"BatchApplyMemoryLimit\":500,\"BatchSplitSize\":0,\"MinTransactionSize\":1000,\"CommitTimeout\":1,\"MemoryLimitTotal\":1024,\"MemoryKeepTime\":60,\"StatementCacheSize\":50},\"PostProcessingRules\":null,\"CharacterSetSettings\":null,\"LoopbackPreventionSettings\":null,\"BeforeImageSettings\":null,\"FailTaskWhenCleanTaskResourceFailed\":false,\"TTSettings\":null}"
+            CdcStartTime: "2023-02-14T17:39:00.517Z"
+
+    #CREO JOB DE GLUE - EXTRACCION DE BASE MIGRADA POR DMS - CLIENTES
+    #DIFICULTAD PODER CREAR .PY EN S3 PARA LEVANTARLO AUTOMATIZADO
+    GlueJob:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: "new-tali-job-clientes"
+            Description: ""
+            Role: "arn:aws:iam::506393252966:role/Glue-Role"
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: "s3://challenge-aws-iac-glueprocess-jigomez/scripts/new-tali-job-clientes.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --enable-metrics: "true"
+                --enable-spark-ui: "true"
+                --spark-event-logs-path: "s3://challenge-aws-iac-glueprocess-jigomez/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --job-language: "python"
+                --TempDir: "s3://challenge-aws-iac-glueprocess-jigomez/temporary/"
+            MaxRetries: 0
+            AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: "3.0"
+            MaxCapacity: 10
+            NumberOfWorkers: 10
+            WorkerType: "G.1X"
+
+    #CREO JOB DE GLUE - EXTRACCION DE BASE MIGRADA POR DMS - VENTAS
+    #DIFICULTAD PODER CREAR .PY EN S3 PARA LEVANTARLO AUTOMATIZADO
+    GlueJob2:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: "new-tali-job-ventas"
+            Description: ""
+            Role: "arn:aws:iam::506393252966:role/Glue-Role"
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: "s3://challenge-aws-iac-glueprocess-jigomez/scripts/new-tali-job-ventas.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --enable-metrics: "true"
+                --enable-spark-ui: "true"
+                --spark-event-logs-path: "s3://challenge-aws-iac-glueprocess-jigomez/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --job-language: "python"
+                --TempDir: "s3://challenge-aws-iac-glueprocess-jigomez/temporary/"
+            MaxRetries: 0
+            AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: "3.0"
+            MaxCapacity: 10
+            NumberOfWorkers: 10
+            WorkerType: "G.1X"
+
+    #CREO TABLA PARA ATHENA - VENTAS
+    GlueTable:
+        Type: "AWS::Glue::Table"
+        Properties:
+            DatabaseName: "ventas-tali-new-database"
+            TableInput: 
+                TableType: "EXTERNAL_TABLE"
+                Parameters: 
+                    EXTERNAL: "TRUE"
+                    classification: "csv"
+                    transient_lastDdlTime: "1676399160"
+                StorageDescriptor: 
+                    Columns: 
+                      - 
+                        Name: "nrofactura"
+                        Type: "int"
+                        Comment: ""
+                      - 
+                        Name: "fechafactura"
+                        Type: "string"
+                        Comment: ""
+                      - 
+                        Name: "cliente"
+                        Type: "string"
+                        Comment: ""
+                      - 
+                        Name: "montosinimp"
+                        Type: "string"
+                        Comment: ""
+                      - 
+                        Name: "impuestos"
+                        Type: "string"
+                        Comment: ""
+                      - 
+                        Name: "montofactura"
+                        Type: "string"
+                        Comment: ""
+                    Location: "s3://challenge-aws-iac-target-glue-jigomez/Ventas"
+                    InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+                    OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+                    Compressed: false
+                    NumberOfBuckets: -1
+                    SerdeInfo: 
+                        SerializationLibrary: "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+                        Parameters: 
+                            "serialization.format": "1"
+                            "field.delim": ";"
+                    Parameters: {}
+                    SkewedInfo: 
+                        SkewedColumnValueLocationMaps: {}
+                    StoredAsSubDirectories: false
+                Retention: 0
+                Name: "ventas-tali-new-table"
+
+    #CREO TABLA PARA ATHENA - CLIENTES
+    GlueTable2:
+        Type: "AWS::Glue::Table"
+        Properties:
+            DatabaseName: "clientes-tali-new-database"
+            TableInput: 
+                Owner: "hadoop"
+                TableType: "EXTERNAL_TABLE"
+                Parameters: 
+                    EXTERNAL: "TRUE"
+                    classification: "csv"
+                    transient_lastDdlTime: "1676397355"
+                StorageDescriptor: 
+                    Columns: 
+                      - 
+                        Name: "id"
+                        Type: "int"
+                      - 
+                        Name: "cliente"
+                        Type: "string"
+                      - 
+                        Name: "tipo"
+                        Type: "string"
+                      - 
+                        Name: "telefono"
+                        Type: "string"
+                      - 
+                        Name: "ubicacion"
+                        Type: "string"
+                    Location: "s3://challenge-aws-iac-target-glue-jigomez/Clientes"
+                    InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+                    OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+                    Compressed: false
+                    NumberOfBuckets: -1
+                    SerdeInfo: 
+                        SerializationLibrary: "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+                        Parameters: 
+                            "serialization.format": "1"
+                            "field.delim": ";"
+                    Parameters: {}
+                    SkewedInfo: 
+                        SkewedColumnValueLocationMaps: {}
+                    StoredAsSubDirectories: false
+                Retention: 0
+                Name: "clientes-tali-new-table"
+    
+    #DATABASE CREADA EN ATHENA MEDIANTE GLUE - CLIENTES
+    GlueDatabase:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: "clientes-tali-new-database"
+
+    #DATABASE CREADA EN ATHENA MEDIANTE GLUE - VENTAS
+    GlueDatabase2:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: "ventas-tali-new-database"
+    
+    #CREARCION DE WORKGROUP ATHENA
+    AthenaWorkGroup:
+        Type: "AWS::Athena::WorkGroup"
+        Properties:
+            Name: "Tali-Workgroup"
+            State: "ENABLED"
+            WorkGroupConfiguration: 
+                BytesScannedCutoffPerQuery: 1099511627776000
+                EnforceWorkGroupConfiguration: false
+                PublishCloudWatchMetricsEnabled: true
+                RequesterPaysEnabled: false
+                ResultConfiguration: 
+                    OutputLocation: "s3://bless-bucket-prueba4/"
+
+
+# SCRIPTS PYTHON - GLUE JOB
+# CLIENTES
+
+#import sys
+#from awsglue.transforms import *
+#from awsglue.utils import getResolvedOptions
+#from pyspark.context import SparkContext
+#from awsglue.context import GlueContext
+#from awsglue.job import Job
+#
+#args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+#sc = SparkContext()
+#glueContext = GlueContext(sc)
+#spark = glueContext.spark_session
+#job = Job(glueContext)
+#job.init(args["JOB_NAME"], args)
+
+# Script generated for node S3 bucket
+#S3bucket_node1 = glueContext.create_dynamic_frame.from_options(
+#    format_options={
+#        "withHeader": False,
+#        "separator": ";",
+#        "optimizePerformance": False,
+#    },
+#    connection_type="s3",
+#    format="csv",
+#    connection_options={
+#        "paths": [
+#            "s3://challenge-aws-iac-target-dms-floki/db/Clientes/LOAD00000001.csv"
+#        ],
+#        "recurse": True,
+#    },
+#    transformation_ctx="S3bucket_node1",
+#)
+
+# Script generated for node ApplyMapping
+#ApplyMapping_node2 = ApplyMapping.apply(
+#    frame=S3bucket_node1,
+#    mappings=[
+#        ("col0", "string", "ID", "int"),
+#        ("col1", "string", "Cliente", "varchar"),
+#        ("col2", "string", "Tipo", "string"),
+#        ("col3", "string", "Telefono", "string"),
+#        ("col4", "string", "Ubicacion", "string"),
+#    ],
+#    transformation_ctx="ApplyMapping_node2",
+#)
+
+# Script generated for node S3 bucket
+#S3bucket_node3 = glueContext.write_dynamic_frame.from_options(
+#    frame=ApplyMapping_node2,
+#    connection_type="s3",
+#    format_options={
+#        "withHeader": False,
+#        "separator": ";",
+#        "quoteChar": -1,
+#        "optimizePerformance": False,
+#    },
+#    format="csv",
+#    connection_options={
+#        "path": "s3://challenge-aws-iac-target-glue-floki/Clientes/",
+#        "partitionKeys": [],
+#    },
+#    transformation_ctx="S3bucket_node3",
+#)
+
+#job.commit()
+
+# VENTAS
+#import sys
+#from awsglue.transforms import *
+#from awsglue.utils import getResolvedOptions
+#from pyspark.context import SparkContext
+#from awsglue.context import GlueContext
+#from awsglue.job import Job
+
+#args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+#sc = SparkContext()
+#glueContext = GlueContext(sc)
+#spark = glueContext.spark_session
+#job = Job(glueContext)
+#job.init(args["JOB_NAME"], args)
+
+# Script generated for node S3 bucket
+#S3bucket_node1 = glueContext.create_dynamic_frame.from_options(
+#    format_options={
+#        "quoteChar": '"',
+#        "withHeader": False,
+#        "separator": ";",
+#        "optimizePerformance": False,
+#    },
+#    connection_type="s3",
+#    format="csv",
+#    connection_options={
+#        "paths": ["s3://challenge-aws-iac-target-dms-floki/ta/Ventas/LOAD00000001.csv"],
+#        "recurse": True,
+#    },
+#    transformation_ctx="S3bucket_node1",
+#)
+
+# Script generated for node ApplyMapping
+#ApplyMapping_node2 = ApplyMapping.apply(
+#    frame=S3bucket_node1,
+#    mappings=[
+#        ("col1", "string", "NroFactura", "int"),
+#        ("col2", "string", "FechaFactura", "string"),
+#        ("col3", "string", "Cliente", "string"),
+#        ("col4", "string", "MontoSinImp", "string"),
+#        ("col5", "string", "Impuestos", "string"),
+#        ("col6", "string", "MontoFactura", "string"),
+#    ],
+#    transformation_ctx="ApplyMapping_node2",
+#)
+
+# Script generated for node S3 bucket
+#S3bucket_node3 = glueContext.write_dynamic_frame.from_options(
+#    frame=ApplyMapping_node2,
+#    connection_type="s3",
+#    format_options={
+#        "withHeader": False,
+#        "separator": ";",
+#        "quoteChar": -1,
+#        "optimizePerformance": False,
+#        },
+#    format="csv",
+#    connection_options={
+#        "path": "s3://challenge-aws-iac-target-glue-floki/Ventas/",
+#        "partitionKeys": [],
+#    },
+#    transformation_ctx="S3bucket_node3",
+#)
+
+#job.commit()
+
+
+
+
+
+
