@@ -1,0 +1,385 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "YAML para challenge tecnico Taligent"
+Parameters:
+    DefaultSG:
+        Type: "String"
+        Default: "sg-0e25c76bdb51b398b"
+
+    SubnetID:
+        Type: "String"
+        Default: "subnet-082734e478715202d"
+
+    VPCID:
+        Type: "String"
+        Default: "vpc-07aa88d03df4fa0b6"
+    
+    SourceBucket:
+        Type: "String"
+        Default: "challenge-aws-iac-2"
+
+    DMSInstance:
+        Type: "String"
+        Default: "ejercicio-iac"
+
+Resources:
+    S3Bucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "challenge-aws-iac-target-dms-2"
+            Tags:
+                - Key: "Interno"
+                Value: "Ejercicio-IaC"
+
+    S3Bucket2:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: "challenge-aws-iac-transformed-dms-2"
+            Tags:
+                - Key: "Interno"
+                Value: "Ejercicio-IaC"
+
+    DMSEndpoint:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: "source-endpoint"
+            EndpointType: "SOURCE"
+            EngineName: "s3"
+            ExtraConnectionAttributes: !Ref "bucketName=${SourceBucket};csvRowDelimiter=\\n;"
+            S3Settings: 
+                BucketName: !Ref "${SourceBucket}"
+                CsvDelimiter: ";"
+                CsvRowDelimiter: "\\n"
+                ExternalTableDefinition: |
+                    {
+                        "TableCount": "2",
+                        "Tables": [
+                            {
+                                "TableName": "clientes",
+                                "TablePath": "clientes/",
+                                "TableOwner": "db",
+                                "TableColumns": [
+                                    {
+                                        "ColumnName": "Id",
+                                        "ColumnType": "INT8",
+                                        "ColumnNullable": "false",
+                                        "ColumnIsPk": "true"
+                                    },
+                                    {
+                                        "ColumnName": "Cliente",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "Tipo",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "20"
+                                    },
+                                    {
+                                        "ColumnName": "Telefono",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "15"
+                                    },
+                                    {
+                                        "ColumnName": "Ubicacion",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE1",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE2",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE3",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE4",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE5",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE6",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    }
+                                ],
+                                "TableColumnsTotal": "11"
+                            },
+                            {
+                                "TableName": "ventas",
+                                "TablePath": "ventas/",
+                                "TableOwner": "db",
+                                "TableColumns": [
+                                    {
+                                        "ColumnName": "DELETE1",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "NumeroFactura",
+                                        "ColumnType": "INT8",
+                                        "ColumnNullable": "false",
+                                        "ColumnIsPk": "true"
+                                    },
+                                    {
+                                        "ColumnName": "FechaFactura",
+                                        "ColumnType": "STRING"
+                                    },
+                                    {
+                                        "ColumnName": "Cliente",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "50"
+                                    },
+                                    {
+                                        "ColumnName": "MontoSinImp",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "10"
+                                    },
+                                    {
+                                        "ColumnName": "Impuestos",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "10"
+                                    },
+                                    {
+                                        "ColumnName": "MontoFactura",
+                                        "ColumnType": "STRING",
+                                        "ColumnLength": "12"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE2",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    },
+                                    {
+                                        "ColumnName": "DELETE3",
+                                        "ColumnType": "STRING",
+                                        "ColumnNullable": "true"
+                                    }
+                                ],
+                                "TableColumnsTotal": "9"
+                            }
+                        ]
+                    }
+
+    DMSEndpoint2:
+        Type: "AWS::DMS::Endpoint"
+        Properties:
+            EndpointIdentifier: target-endpoint
+            EndpointType: "TARGET"
+            EngineName: "s3"
+            ExtraConnectionAttributes: !Ref "bucketName=${S3Bucket};compressionType=NONE;csvDelimiter=,;csvRowDelimiter=\\n;datePartitionEnabled=false;"
+            S3Settings: 
+                BucketName: !Ref S3Bucket
+                CompressionType: "NONE"
+                CsvDelimiter: ","
+                CsvRowDelimiter: "\\n"
+                ServiceAccessRoleArn: !Ref "arn:aws:iam::${AWS::AccountId}:role/${IAMRole}"
+
+    DMSReplicationInstance:
+        Type: "AWS::DMS::ReplicationInstance"
+        Properties:
+            ReplicationInstanceIdentifier: !Ref "${DMSInstance}"
+            ReplicationInstanceClass: "dms.t3.micro"
+            AllocatedStorage: 20
+            ReplicationSubnetGroupIdentifier: !Ref "${DMSReplicationSubnetGroup}"
+            MultiAZ: false
+            PubliclyAccessible: false
+
+    DMSReplicationTask:
+        Type: "AWS::DMS::ReplicationTask"
+        Properties:
+            ReplicationTaskIdentifier: "rep-task-challenge-iac"
+            SourceEndpointArn: !Ref "arn:aws:dms:${AWS::Region}:${AWS::AccountId}:endpoint:${DMSEndpoint}"
+            TargetEndpointArn: !Ref "arn:aws:dms:${AWS::Region}:${AWS::AccountId}:endpoint:${DMSEndpoint2}"
+            ReplicationInstanceArn: !Ref "arn:aws:dms:${AWS::Region}:${AWS::AccountID}:rep:${DMSReplicationInstance}"
+            MigrationType: "full-load"
+            TableMappings: "{\"rules\":[{\"rule-type\":\"selection\",\"rule-id\":\"249376499\",\"rule-name\":\"249376499\",\"object-locator\":{\"schema-name\":\"%\",\"table-name\":\"%\"},\"rule-action\":\"include\",\"filters\":[]}]}"
+            ReplicationTaskSettings: "{\"TargetMetadata\":{\"TargetSchema\":\"\",\"SupportLobs\":true,\"FullLobMode\":false,\"LobChunkSize\":0,\"LimitedSizeLobMode\":true,\"LobMaxSize\":32,\"InlineLobMaxSize\":0,\"LoadMaxFileSize\":0,\"ParallelLoadThreads\":0,\"ParallelLoadBufferSize\":0,\"BatchApplyEnabled\":false,\"TaskRecoveryTableEnabled\":false,\"ParallelLoadQueuesPerThread\":0,\"ParallelApplyThreads\":0,\"ParallelApplyBufferSize\":0,\"ParallelApplyQueuesPerThread\":0},\"FullLoadSettings\":{\"TargetTablePrepMode\":\"DROP_AND_CREATE\",\"CreatePkAfterFullLoad\":false,\"StopTaskCachedChangesApplied\":false,\"StopTaskCachedChangesNotApplied\":false,\"MaxFullLoadSubTasks\":8,\"TransactionConsistencyTimeout\":600,\"CommitRate\":10000},\"Logging\":{\"EnableLogging\":false,\"EnableLogContext\":false,\"ControlTablesSettings\":{\"historyTimeslotInMinutes\":5,\"ControlSchema\":\"\",\"HistoryTimeslotInMinutes\":5,\"HistoryTableEnabled\":false,\"SuspendedTablesTableEnabled\":false,\"StatusTableEnabled\":false,\"FullLoadExceptionTableEnabled\":false},\"StreamBufferSettings\":{\"StreamBufferCount\":3,\"StreamBufferSizeInMB\":8,\"CtrlStreamBufferSizeInMB\":5},\"ChangeProcessingDdlHandlingPolicy\":{\"HandleSourceTableDropped\":true,\"HandleSourceTableTruncated\":true,\"HandleSourceTableAltered\":true},\"ErrorBehavior\":{\"DataErrorPolicy\":\"LOG_ERROR\",\"EventErrorPolicy\":\"IGNORE\",\"DataTruncationErrorPolicy\":\"LOG_ERROR\",\"DataErrorEscalationPolicy\":\"SUSPEND_TABLE\",\"DataErrorEscalationCount\":0,\"TableErrorPolicy\":\"SUSPEND_TABLE\",\"TableErrorEscalationPolicy\":\"STOP_TASK\",\"TableErrorEscalationCount\":0,\"RecoverableErrorCount\":-1,\"RecoverableErrorInterval\":5,\"RecoverableErrorThrottling\":true,\"RecoverableErrorThrottlingMax\":1800,\"RecoverableErrorStopRetryAfterThrottlingMax\":true,\"ApplyErrorDeletePolicy\":\"IGNORE_RECORD\",\"ApplyErrorInsertPolicy\":\"LOG_ERROR\",\"ApplyErrorUpdatePolicy\":\"LOG_ERROR\",\"ApplyErrorEscalationPolicy\":\"LOG_ERROR\",\"ApplyErrorEscalationCount\":0,\"ApplyErrorFailOnTruncationDdl\":false,\"FullLoadIgnoreConflicts\":true,\"FailOnTransactionConsistencyBreached\":false,\"FailOnNoTablesCaptured\":true},\"ChangeProcessingTuning\":{\"BatchApplyPreserveTransaction\":true,\"BatchApplyTimeoutMin\":1,\"BatchApplyTimeoutMax\":30,\"BatchApplyMemoryLimit\":500,\"BatchSplitSize\":0,\"MinTransactionSize\":1000,\"CommitTimeout\":1,\"MemoryLimitTotal\":1024,\"MemoryKeepTime\":60,\"StatementCacheSize\":50},\"PostProcessingRules\":null,\"CharacterSetSettings\":null,\"LoopbackPreventionSettings\":null,\"BeforeImageSettings\":null,\"FailTaskWhenCleanTaskResourceFailed\":false,\"TTSettings\":null}"
+
+    DMSReplicationSubnetGroup:
+        Type: "AWS::DMS::ReplicationSubnetGroup"
+        Properties:
+            ReplicationSubnetGroupDescription: "Subnet group for DMS"
+            SubnetIds: 
+              - !Ref "${SubnetID}"
+
+    EC2VPCEndpoint:
+        Type: "AWS::EC2::VPCEndpoint"
+        Properties:
+            VpcEndpointType: "Gateway"
+            VpcId: !Ref "${VPCID}"
+            ServiceName: !Ref "com.amazonaws.${AWS::Region}.s3"
+            Tags:
+                - Key: "Interno"
+                Value: "Ejercicio-IaC"
+                - Key: "Name"
+                Value: "S3-VPC-Endpoint"
+
+
+    AthenaWorkGroup:
+        Type: "AWS::Athena::WorkGroup"
+        Properties:
+            Name: "challenge-athena-workgroup"
+            State: "ENABLED"
+            WorkGroupConfiguration: 
+                BytesScannedCutoffPerQuery: 1048576000
+                EnforceWorkGroupConfiguration: false
+                PublishCloudWatchMetricsEnabled: true
+                RequesterPaysEnabled: false
+                ResultConfiguration: 
+                    OutputLocation: !Ref "s3://${S3Bucket}/"
+
+    GlueJob:
+        Type: "AWS::Glue::Job"
+        Properties:
+            Name: "challenge-iac-job"
+            Role: !Ref "arn:aws:iam::${AWS::AccountId}:role/${IAMRole}"
+            ExecutionProperty: 
+                MaxConcurrentRuns: 1
+            Command: 
+                Name: "glueetl"
+                ScriptLocation: !Ref "s3://${SourceBucket}/scripts/glue.py"
+                PythonVersion: "3"
+            DefaultArguments: 
+                --enable-metrics: "true"
+                --enable-spark-ui: "true"
+                --spark-event-logs-path: !Ref "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/sparkHistoryLogs/"
+                --enable-job-insights: "true"
+                --enable-glue-datacatalog: "true"
+                --enable-continuous-cloudwatch-log: "true"
+                --job-bookmark-option: "job-bookmark-disable"
+                --job-language: "python"
+                --TempDir: !Ref "s3://aws-glue-assets-${AWS::AccountId}-${AWS::Region}/temporary/"
+            MaxRetries: 0
+            AllocatedCapacity: 10
+            Timeout: 2880
+            GlueVersion: "3.0"
+            MaxCapacity: 10
+            NumberOfWorkers: 10
+            WorkerType: "G.1X"
+
+    IAMRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+            RoleName: "challenge-iac-role"
+            AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":[\"glue.amazonaws.com\",\"dms.amazonaws.com\"]},\"Action\":\"sts:AssumeRole\"}]}"
+            ManagedPolicyArns: 
+              - "arn:aws:iam::aws:policy/service-role/AmazonDMSVPCManagementRole"
+              - "arn:aws:iam::aws:policy/service-role/AmazonDMSCloudWatchLogsRole"
+              - "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+              - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+            Description: "Allows DMS and Glue to call AWS services on your behalf."
+
+    GlueDatabase:
+        Type: "AWS::Glue::Database"
+        Properties:
+            DatabaseInput: 
+                Name: "db"
+            CatalogId: !Ref "AWS::AccountId"
+
+    GlueTable:
+        Type: "AWS::Glue::Table"
+        Properties:
+            DatabaseName: "db"
+            CatalogId: !Ref "AWS::AccountId"
+            TableInput: 
+                Parameters: 
+                    EXTERNAL: "TRUE"
+                    classification: "json"
+                StorageDescriptor: 
+                    Columns: 
+                      - 
+                        Name: "id"
+                        Type: "int"
+                      - 
+                        Name: "cliente"
+                        Type: "string"
+                      - 
+                        Name: "tipo"
+                        Type: "string"
+                      - 
+                        Name: "telefono"
+                        Type: "string"
+                      - 
+                        Name: "ubicacion"
+                        Type: "string"
+                    Location: !Sub "s3://${S3Bucket2}/bd/clientes"
+                    InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+                    OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+                    Compressed: false
+                    NumberOfBuckets: -1
+                    SerdeInfo: 
+                        SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
+                        Parameters: 
+                            mapping: "TRUE"
+                            "serialization.format": "1"
+                            "ignore.malformed.json": "FALSE"
+                            "dots.in.keys": "FALSE"
+                            "case.insensitive": "TRUE"
+                    Parameters: {}
+                    SkewedInfo: 
+                        SkewedColumnValueLocationMaps: {}
+                    StoredAsSubDirectories: false
+                Retention: 0
+                Name: "clientes"
+
+    GlueTable2:
+        Type: "AWS::Glue::Table"
+        Properties:
+            DatabaseName: "db"
+            CatalogId: !Ref "AWS::AccountId"
+            TableInput: 
+                Parameters: 
+                    EXTERNAL: "TRUE"
+                    classification: "json"
+                StorageDescriptor: 
+                    Columns: 
+                      - 
+                        Name: "nfactura"
+                        Type: "int"
+                      - 
+                        Name: "fecha"
+                        Type: "string"
+                      - 
+                        Name: "cliente"
+                        Type: "string"
+                      - 
+                        Name: "montosinimp"
+                        Type: "string"
+                      - 
+                        Name: "impuestos"
+                        Type: "string"
+                      - 
+                        Name: "montofactura"
+                        Type: "string"
+                    Location: !Sub "s3://${S3Bucket2}/bd/ventas"
+                    InputFormat: "org.apache.hadoop.mapred.TextInputFormat"
+                    OutputFormat: "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+                    Compressed: false
+                    NumberOfBuckets: -1
+                    SerdeInfo: 
+                        SerializationLibrary: "org.openx.data.jsonserde.JsonSerDe"
+                        Parameters: 
+                            mapping: "TRUE"
+                            "serialization.format": "1"
+                            "ignore.malformed.json": "FALSE"
+                            "dots.in.keys": "FALSE"
+                            "case.insensitive": "TRUE"
+                    Parameters: {}
+                    SkewedInfo: 
+                        SkewedColumnValueLocationMaps: {}
+                    StoredAsSubDirectories: false
+                Retention: 0
+                Name: "ventas"
